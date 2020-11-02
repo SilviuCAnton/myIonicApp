@@ -2,7 +2,6 @@ import React from 'react';
 import { Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import Home from './pages/Home';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -23,14 +22,21 @@ import '@ionic/react/css/display.css';
 /* Theme variables */
 import './theme/variables.css';
 
+import {BugList, BugEdit} from './bugs'
+import { BugProvider } from './bugs/BugProvider'
+
 const App: React.FC = () => (
   <IonApp>
-    <IonReactRouter>
-      <IonRouterOutlet>
-        <Route path="/home" component={Home} exact={true} />
-        <Route exact path="/" render={() => <Redirect to="/home" />} />
-      </IonRouterOutlet>
-    </IonReactRouter>
+    <BugProvider>
+      <IonReactRouter>
+        <IonRouterOutlet>
+          <Route path="/bugs" component={BugList} exact={true} />
+          <Route path="/bug" component={BugEdit} exact={true} />
+          <Route path="/bugs/:id" component={BugEdit} exact={true} />
+          <Route exact path="/" render={() => <Redirect to="/bugs" />} />
+        </IonRouterOutlet>
+      </IonReactRouter>
+    </BugProvider>
   </IonApp>
 );
 
