@@ -6,10 +6,10 @@ interface BugPropsUpdatable extends BugProps {
   onEdit: (id?: number) => void;
 }
 
-const Bug: React.FC<BugPropsUpdatable> = ({ id, title, description, severity, onEdit }) => {
+const Bug: React.FC<BugPropsUpdatable> = ({ id, title, description, severity, dateReported, solved, onEdit }) => {
   return (
     <IonItem onClick={() => onEdit(id)}>
-      <IonLabel>Bug {title} : {description} ({severity} points)</IonLabel>
+      <IonLabel>Bug {title} : {description} ({severity} points) {dateReported.toString()} {solved}</IonLabel>
     </IonItem>
   );
 };

@@ -24,19 +24,24 @@ import './theme/variables.css';
 
 import {BugList, BugEdit} from './bugs'
 import { BugProvider } from './bugs/BugProvider'
+import { AuthProvider, Login, PrivateRoute } from './auth';
 
 const App: React.FC = () => (
   <IonApp>
-    <BugProvider>
-      <IonReactRouter>
-        <IonRouterOutlet>
-          <Route path="/bugs" component={BugList} exact={true} />
-          <Route path="/bug" component={BugEdit} exact={true} />
-          <Route path="/bugs/:id" component={BugEdit} exact={true} />
+    <IonReactRouter>
+      <IonRouterOutlet>
+        <AuthProvider>
+          <Route path="/login" component={Login} exact={true}/>
+          <BugProvider>
+            <PrivateRoute path="/bugs" component={BugList} exact={true} />
+            <PrivateRoute path="/bug" component={BugEdit} exact={true} />
+            <PrivateRoute path="/bugs/:id" component={BugEdit} exact={true} />
+          </BugProvider>
+          
           <Route exact path="/" render={() => <Redirect to="/bugs" />} />
-        </IonRouterOutlet>
-      </IonReactRouter>
-    </BugProvider>
+        </AuthProvider>
+      </IonRouterOutlet>
+    </IonReactRouter>
   </IonApp>
 );
 

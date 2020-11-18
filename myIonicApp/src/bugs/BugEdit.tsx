@@ -2,9 +2,12 @@ import React, { useContext, useEffect, useState } from 'react';
 import {
   IonButton,
   IonButtons,
+  IonCheckbox,
   IonContent,
+  IonDatetime,
   IonHeader,
   IonInput,
+  IonLabel,
   IonLoading,
   IonPage,
   IonTitle,
@@ -26,6 +29,8 @@ const BugEdit: React.FC<BugEditProps> = ({ history, match }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState(0);
+  const [dateReported, setDateReported] = useState(new Date());
+  const [solved, setSolved] = useState(false);
   const [bug, setBug] = useState<BugProps>();
 
   useEffect(() => {
@@ -45,13 +50,12 @@ const BugEdit: React.FC<BugEditProps> = ({ history, match }) => {
   }, [match.params.id, bugs]);
 
   const handleSave = () => {
-    const editedBug = bug ? { ...bug, title, description, severity } : { title, description, severity };
+    const editedBug = bug ? { ...bug, title, description, severity, dateReported, solved } : { title, description, severity, dateReported, solved };
     saveBug && saveBug(editedBug).then(() => history.goBack());
   };
 
   const handleDelete = () => {
-    const deletedBug = bug ? { ...bug, title, description, severity } : { title, description, severity };
-    console.log(deleteBug)
+    const deletedBug = bug ? { ...bug, title, description, severity, dateReported, solved } : { title, description, severity, dateReported, solved };
     deleteBug && deleteBug(deletedBug).then(() => history.goBack());
   };
 
@@ -67,15 +71,24 @@ const BugEdit: React.FC<BugEditProps> = ({ history, match }) => {
             <IonButton onClick={handleSave}>
               Save
             </IonButton>
-            
           </IonButtons>
           {displayDeleteButton}
         </IonToolbar>
       </IonHeader>
       <IonContent>
+        <IonTitle>Title</IonTitle>
         <IonInput value={title} onIonChange={e => setTitle(e.detail.value || '')} />
+        <IonTitle>Description</IonTitle>
         <IonInput value={description} onIonChange={e => setDescription(e.detail.value || '')} />
+        <IonTitle>Severity</IonTitle>
         <IonInput type="number" value={severity} onIonChange={e => setSeverity(parseInt(e.detail.value!, 0))} />
+        <IonTitle>Date Reported</IonTitle>
+        <IonDatetime
+            displayFormat="MM DD YY"
+            value={dateReported.toString()} onIonChange={e => setDateReported(new Date(e.detail.value!))}>
+        </IonDatetime>
+        <IonTitle>Solved</IonTitle>
+        <IonCheckbox checked={solved} onIonChange={e => setSolved(e.detail.checked)} />
         <IonLoading isOpen={saving || deleting} />
         {savingError && (
           <div>{savingError.message || 'Failed to save bug'}</div>
