@@ -7,9 +7,13 @@ interface BugPropsUpdatable extends BugProps {
 }
 
 const Bug: React.FC<BugPropsUpdatable> = ({ id, title, description, severity, dateReported, solved, onEdit }) => {
+  let date = "";
+  if(typeof dateReported !== 'undefined') {
+    date = dateReported.toString();
+  }
   return (
     <IonItem onClick={() => onEdit(id)}>
-      <IonLabel>Bug {title} : {description} ({severity} points) {dateReported.toString()} {solved}</IonLabel>
+      <IonLabel>Bug {id} {title} : {description} ({severity} points) {date} {solved}</IonLabel>
     </IonItem>
   );
 };

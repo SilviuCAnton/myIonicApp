@@ -2,6 +2,7 @@ import axios from 'axios';
 import { authConfig, baseUrl, getLogger } from '../core';
 import { BugProps } from './BugProps';
 import {Plugins} from "@capacitor/core";
+import { BugDiff } from './BugDiff';
 
 const {Storage} = Plugins;
 
@@ -76,6 +77,11 @@ export const removeBug: (token: string, _id: string, bug: BugProps) => void = (t
   });
 
   return withLogs(result, 'deleteBug');
+}
+
+export const sendAllBugs: (token: string, _id: string, bugs: BugProps[]) => Promise<BugDiff[]> = (token, _id, bugs) => {
+  const result = axios.post(`${bugUrl}/reconnect`, bugs, authConfig(token, _id))
+  return withLogs(result, 'sendBugs')
 }
 
 interface MessageData {
