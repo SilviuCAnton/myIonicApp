@@ -5,8 +5,6 @@ import { BugProps } from './BugProps';
 import { createBug, getBugs, newWebSocket, updateBug, removeBug, sendAllBugs } from './BugApi';
 import { AuthContext } from '../auth';
 import {Storage, Plugins, NetworkStatus, StoragePluginWeb} from "@capacitor/core";
-import { bug } from 'ionicons/icons';
-import { connected } from 'process';
 import { BugDiff } from './BugDiff';
 
 const log = getLogger('BugProvider');
@@ -92,7 +90,7 @@ const reducer: (state: BugsState, action: ActionProps) => BugsState =
       
       case SAVE_BUG_SUCCEEDED:
         const bugs = [...(state.bugs || [])];
-        const bug = payload.bug;
+        const bug:BugProps = payload.bug;
         const index = bugs.findIndex(bg => bg.id === bug.id);
         if (index === -1) {
           bugs.unshift(bug)
@@ -136,7 +134,8 @@ const reducer: (state: BugsState, action: ActionProps) => BugsState =
         const solvedConflictBug = payload.savedBug;
         const newDiffs = allConflicts.filter(diff => diff.serverVersion.id! !== solvedConflictBug.id)
 
-        const myBugList = [...(state.bugs || [])].filter(bug => typeof bug.dateReported !== "undefined")
+        const myBugList = [...(state.bugs || [])].filter(bug => typeof bug.dateReported !== 'undefined' && bug.id !== solvedConflictBug.id)
+        myBugList.push(solvedConflictBug)
         return {...state, bugs: myBugList, solving: false, solvingError: null, diffs: newDiffs}
 
       case SOLVE_CONFLICT_FAILED:
