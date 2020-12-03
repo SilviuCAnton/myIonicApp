@@ -6,6 +6,7 @@ import { createBug, getBugs, newWebSocket, updateBug, removeBug, sendAllBugs } f
 import { AuthContext } from '../auth';
 import {Storage, Plugins, NetworkStatus, StoragePluginWeb} from "@capacitor/core";
 import { BugDiff } from './BugDiff';
+import { batteryCharging } from 'ionicons/icons';
 
 const log = getLogger('BugProvider');
 
@@ -59,6 +60,7 @@ const RELOAD_BUGS_SUCCEEDED = 'RELOAD_BUGS_SUCCEEDED';
 const SAVE_BUG_STARTED = 'SAVE_BUG_STARTED';
 const SAVE_BUG_SUCCEEDED = 'SAVE_BUG_SUCCEEDED';
 const SAVE_BUG_FAILED = 'SAVE_BUG_FAILED';
+const SAVE_BUG_CONFLICT = 'SAVE_BUG_CONFLICT';
 const DELETE_BUG_STARTED = 'DELETE_BUG_STARTED';
 const DELETE_BUG_SUCCEEDED = 'DELETE_BUG_SUCCEEDED';
 const DELETE_BUG_FAILED = 'DELETE_BUG_FAILED';
@@ -77,13 +79,13 @@ const reducer: (state: BugsState, action: ActionProps) => BugsState =
 
       case FETCH_BUGS_SUCCEEDED:
         const bugList = [...(state.bugs || [])];
-        return {...state, bugs: bugList.concat(payload.bugs), fetching: false};
+        return {...state, bugs: bugList.concat(payload.fetched), fetching: false};
 
       case FETCH_BUGS_FAILED:
         return { ...state, fetchingError: payload.error, fetching: false };
       
       case RELOAD_BUGS_SUCCEEDED: 
-        return {...state, bugs: payload.bugs, fetching: false};
+        return {...state, bugs: payload.fetched, fetching: false};
       
       case SAVE_BUG_STARTED:
         return { ...state, savingError: null, saving: true };
@@ -98,6 +100,13 @@ const reducer: (state: BugsState, action: ActionProps) => BugsState =
           bugs[index] = bug;
         }
         return { ...state, bugs, saving: false };
+
+      case SAVE_BUG_CONFLICT:
+        console.log("CONFLICT")
+        const existingConlifcts = [...(state.diffs || [])];
+        existingConlifcts.push(payload.conflict)
+        console.log(existingConlifcts)
+        return {...state, diffs: existingConlifcts, saving: false};
 
       case SAVE_BUG_FAILED:
         return { ...state, savingError: payload.error, saving: false };
@@ -131,7 +140,8 @@ const reducer: (state: BugsState, action: ActionProps) => BugsState =
       
       case SOLVE_CONFLICT_SUCCEEDED:
         const allConflicts = [...(state.diffs || [])];
-        const solvedConflictBug = payload.savedBug;
+        const solvedConflictBug = payload.bug;
+        console.log(allConflicts)
         const newDiffs = allConflicts.filter(diff => diff.serverVersion.id! !== solvedConflictBug.id)
 
         const myBugList = [...(state.bugs || [])].filter(bug => typeof bug.dateReported !== 'undefined' && bug.id !== solvedConflictBug.id)
@@ -178,9 +188,33 @@ export const BugProvider: React.FC<BugProviderProps> = ({ children }) => {
     try {
         log('fetchBugs started');
         dispatch({type: FETCH_BUGS_STARTED});
-        const bugs = await getBugs(token, (await Storage.get({key : '_id'})).value, page, size, isSolved, searchTitle);
+
+        let bugsToSend: any[] = []
+
+          await Storage.keys().then(function(allkeys) {
+            allkeys.keys.forEach(async key => {
+              await Storage.get({key}).then(function (it) {
+                  if (key !== 'user' && key !== '_id') {
+                    const object = JSON.parse(it.value);
+                    if (typeof object.title !== 'undefined') {
+                      bugsToSend.push(object);
+                    }
+                  }
+                })
+            })
+          })
+
+        let fetched = await getBugs(token, (await Storage.get({key : '_id'})).value, page, size, isSolved, searchTitle, bugsToSend);
+        fetched = fetched.filter(x => bugsToSend.includes(x))
+        bugsToSend.forEach(bg => {
+          let lst = fetched.filter(b => b.id === bg.id)
+          if (lst.length ===0) {
+            fetched.push(bg)
+          }
+        })
+        console.log(fetched)
         log('fetchBugssucceeded');
-        dispatch({type: FETCH_BUGS_SUCCEEDED, payload: {bugs}});
+        dispatch({type: FETCH_BUGS_SUCCEEDED, payload: {fetched}});
     } catch (error) {
         log('fetchBugs failed');
         alert("OFFLINE!");
@@ -216,9 +250,30 @@ export const BugProvider: React.FC<BugProviderProps> = ({ children }) => {
     try {
         log(`reloadBugs started with searchName = ${searchTitle}`);
         dispatch({type: FETCH_BUGS_STARTED});
-        const bugs = await getBugs(token, (await Storage.get({key : '_id'})).value, 0, offset + size, isSolved, searchTitle);
+        let bugsToSend: any[] = []
+
+          await Storage.keys().then(function(allkeys) {
+            allkeys.keys.forEach(async key => {
+              await Storage.get({key}).then(function (it) {
+                  if (key !== 'user' && key !== '_id') {
+                    const object = JSON.parse(it.value);
+                    if (typeof object.title !== 'undefined') {
+                      bugsToSend.push(object);
+                    }
+                  }
+                })
+            })
+          })
+        const fetched = await getBugs(token, (await Storage.get({key : '_id'})).value, 0, offset + size, isSolved, searchTitle, bugsToSend);
+        bugsToSend.forEach(bg => {
+          let lst = fetched.filter(b => b.id === bg.id)
+          if (lst.length ===0) {
+            fetched.push(bg)
+          }
+        })
         log('reloadBugs succeeded');
-        dispatch({type: RELOAD_BUGS_SUCCEEDED, payload: {bugs}});
+        
+        dispatch({type: RELOAD_BUGS_SUCCEEDED, payload: {fetched}});
     } catch (error) {
         log('reloadBugs failed');
         alert("OFFLINE!");
@@ -251,9 +306,20 @@ export const BugProvider: React.FC<BugProviderProps> = ({ children }) => {
     try {
       log('saveBug started');
       dispatch({ type: SAVE_BUG_STARTED });
-      const savedBug = await (bug.id ? updateBug(token, (await Storage.get({key : '_id'})).value, bug) : createBug(token, (await Storage.get({key : '_id'})).value, bug));
-      log('saveBug succeeded');
-      dispatch({ type: SAVE_BUG_SUCCEEDED, payload: { bug: savedBug } });
+      if(bug.id) {
+        const updateResult = await updateBug(token, (await Storage.get({key : '_id'})).value, bug);
+        if(updateResult.bug) {
+          log('updateBug succeeded')
+          dispatch({ type: SAVE_BUG_SUCCEEDED, payload: { bug: updateResult.bug } });
+        } else {
+          log('updateBug conflict')
+          dispatch({ type: SAVE_BUG_CONFLICT, payload: {conflict: updateResult.conflict} })
+        }
+      } else {
+        const savedBug = await createBug(token, (await Storage.get({key : '_id'})).value, bug);
+        log('saveBug succeeded');
+        dispatch({ type: SAVE_BUG_SUCCEEDED, payload: { bug: savedBug } });
+      }
     } catch (error) {
       log('saveBug failed');
       alert("OFFLINE!");
@@ -300,9 +366,9 @@ export const BugProvider: React.FC<BugProviderProps> = ({ children }) => {
     try {
       log('solveConflict started');
       dispatch({ type: SOLVE_CONFLICT_STARTED });
-      const savedBug = await updateBug(token, (await Storage.get({key : '_id'})).value, version)
+      const updateResult = await updateBug(token, (await Storage.get({key : '_id'})).value, version)
       log('solveConflict succeded');
-      dispatch({ type: SOLVE_CONFLICT_SUCCEEDED, payload: { savedBug }});
+      dispatch({ type: SOLVE_CONFLICT_SUCCEEDED, payload: { bug: updateResult.bug }});
     } catch (error) {
       log('solveConflict failed');
       dispatch({type: SOLVE_CONFLICT_FAILED, payload: {version}});
@@ -320,11 +386,11 @@ export const BugProvider: React.FC<BugProviderProps> = ({ children }) => {
       log(`ws message, bug ${event}`);
       if (event === 'created' || event === 'updated') {
         bug.dateReported = new Date(bug.dateReported);
-        dispatch({ type: SAVE_BUG_SUCCEEDED, payload: { bug } });
+        // dispatch({ type: SAVE_BUG_SUCCEEDED, payload: { bug } });
       }
       if(event === 'deleted') {
         bug.dateReported = new Date(bug.dateReported);
-        dispatch({type: DELETE_BUG_SUCCEEDED, payload: { bug }});
+        // dispatch({type: DELETE_BUG_SUCCEEDED, payload: { bug }});
       }
     });
     return () => {

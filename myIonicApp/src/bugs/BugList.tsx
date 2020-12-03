@@ -156,11 +156,11 @@ const BugList: React.FC<RouteComponentProps> = ({ history }) => {
               {diffs.map(({ localVersion, serverVersion }) => <BugConflict localVersion={localVersion} serverVersion= {serverVersion} onSolve={solveConflict} ></BugConflict>)}
             </IonList></>
         )}
-
+        {console.log(bugs)}
         {bugs && (typeof diffs === 'undefined' || diffs.length === 0) && (
           <IonList>
-            {bugs.map(({ id, title, description, severity, dateReported, solved}) =>
-              <Bug key={id} id={id} title={title} description = {description} severity = {severity} dateReported = {dateReported} solved= {solved} onEdit={id => history.push(`/bugs/${id}`)} />)}
+            {bugs.map(({ id, title, description, severity, dateReported, solved, version}) =>
+              <Bug key={id} id={id} title={title} description = {description} severity = {severity} dateReported = {dateReported} solved= {solved} version = {version} onEdit={id => history.push(`/bugs/${id}`)} />)}
             
             <IonInfiniteScroll threshold="10px" disabled={disableInfiniteScroll} onIonInfinite={(e: CustomEvent<void>) => searchNext(e)}>
               <IonInfiniteScrollContent loadingText="Loading more items..."></IonInfiniteScrollContent>

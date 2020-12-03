@@ -3,6 +3,9 @@ import { authConfig, baseUrl, getLogger } from '../core';
 import { BugProps } from './BugProps';
 import {Plugins} from "@capacitor/core";
 import { BugDiff } from './BugDiff';
+import { UpdateResult } from './UpdateResult'; 
+import { forEachTrailingCommentRange } from 'typescript';
+import { sha256 } from 'js-sha256';
 
 const {Storage} = Plugins;
 
@@ -28,8 +31,10 @@ function withLogs<T>(promise: Promise<ResponseProps<T>>, fnName: string): Promis
     });
 }
 
-export const getBugs: (token: string, _id: string, page: number, size: number, solved: boolean | undefined, searchTitle: string) => Promise<BugProps[]> = (token, _id, page, size, solved, searchTitle) => {
-  const result = axios.get(bugUrl + `?page=${page}&size=${size}&isSolved=${solved}&titleFilter=${searchTitle}`, authConfig(token, _id));
+export const getBugs: (token: string, _id: string, page: number, size: number, solved: boolean | undefined, searchTitle: string, bugs:BugProps[]) => Promise<BugProps[]> = (token, _id, page, size, solved, searchTitle, bugs) => {
+  let config = authConfig(token, _id);
+  addETagHeader(bugs, config)
+  const result = axios.get(bugUrl + `?page=${page}&size=${size}&isSolved=${solved}&titleFilter=${searchTitle}`, config);
 
   result.then(function (result) {
     result.data.forEach(async (bug: BugProps) => {
@@ -56,7 +61,7 @@ export const createBug: (token: string, _id: string, bug: BugProps) => Promise<B
   return withLogs(result, 'createBug');
 }
 
-export const updateBug: (token: string, _id: string, bug: BugProps) => Promise<BugProps> = (token, _id, bug) => {
+export const updateBug: (token: string, _id: string, bug: BugProps) => Promise<UpdateResult> = (token, _id, bug) => {
   const result = axios.put(`${bugUrl}/${bug.id}`, bug, authConfig(token, _id))
 
   result.then(async function (result) {
@@ -82,6 +87,16 @@ export const removeBug: (token: string, _id: string, bug: BugProps) => void = (t
 export const sendAllBugs: (token: string, _id: string, bugs: BugProps[]) => Promise<BugDiff[]> = (token, _id, bugs) => {
   const result = axios.post(`${bugUrl}/reconnect`, bugs, authConfig(token, _id))
   return withLogs(result, 'sendBugs')
+}
+
+function addETagHeader(bugs: BugProps[], config: any): void {
+    if (bugs.length === 0) return;
+    let etag: string[] = []
+    bugs.forEach(bug => {
+        let hashValue: string = bug.title + bug.description + bug.version + bug.solved + bug.severity
+        etag.push(hashValue)
+    });
+    config.headers['ETag'] = JSON.stringify(etag)
 }
 
 interface MessageData {

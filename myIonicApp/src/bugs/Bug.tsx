@@ -6,7 +6,7 @@ interface BugPropsUpdatable extends BugProps {
   onEdit: (id?: number) => void;
 }
 
-const Bug: React.FC<BugPropsUpdatable> = ({ id, title, description, severity, dateReported, solved, onEdit }) => {
+const Bug: React.FC<BugPropsUpdatable> = ({ id, title, description, severity, dateReported, solved, version, onEdit }) => {
   let date = "";
   if(typeof dateReported !== 'undefined') {
     date = dateReported.toString();

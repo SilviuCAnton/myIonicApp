@@ -5,4 +5,5 @@ export interface BugProps {
     severity: number;
     dateReported: Date;
     solved: boolean;
+    version: number;
   }

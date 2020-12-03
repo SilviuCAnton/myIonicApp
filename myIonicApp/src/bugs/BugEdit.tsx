@@ -31,31 +31,36 @@ const BugEdit: React.FC<BugEditProps> = ({ history, match }) => {
   const [severity, setSeverity] = useState(0);
   const [dateReported, setDateReported] = useState(new Date());
   const [solved, setSolved] = useState(false);
+  const [version, setVersion] = useState(-1);
   const [bug, setBug] = useState<BugProps>();
 
   useEffect(() => {
     log('useEffect');
 
     const routeId = match.params.id || '';
-    const bug = bugs?.find(bug => bug.id?.toString() === routeId);
+    const foundBug = bugs?.find(bug => bug.id?.toString() === routeId);
+    let viewBug = undefined;
+    if(foundBug) {
+      viewBug = {id: foundBug.id, title: foundBug.title, description: foundBug.description, severity: foundBug.severity, dateReported: foundBug.dateReported, solved: foundBug.solved, version: foundBug.version}
+    }
 
-    setBug(bug);
+    setBug(viewBug)
 
-    if (bug) {
-      setTitle(bug.title);
-      setDescription(bug.description);
-      setSeverity(bug.severity);
+    if (viewBug) {
+      setTitle(viewBug.title);
+      setDescription(viewBug.description);
+      setSeverity(viewBug.severity);
     }
 
   }, [match.params.id, bugs]);
 
   const handleSave = () => {
-    const editedBug = bug ? { ...bug, title, description, severity, dateReported, solved } : { title, description, severity, dateReported, solved };
+    const editedBug = bug ? { ...bug, title, description, severity, dateReported, solved } : { title, description, severity, dateReported, solved, version };
     saveBug && saveBug(editedBug).then(() => history.goBack());
   };
 
   const handleDelete = () => {
-    const deletedBug = bug ? { ...bug, title, description, severity, dateReported, solved } : { title, description, severity, dateReported, solved };
+    const deletedBug = bug ? { ...bug, title, description, severity, dateReported, solved } : { title, description, severity, dateReported, solved, version };
     deleteBug && deleteBug(deletedBug).then(() => history.goBack());
   };
 
@@ -76,18 +81,18 @@ const BugEdit: React.FC<BugEditProps> = ({ history, match }) => {
         </IonToolbar>
       </IonHeader>
       <IonContent>
-        <IonTitle>Title</IonTitle>
+        <IonHeader>Title</IonHeader>
         <IonInput value={title} onIonChange={e => setTitle(e.detail.value || '')} />
-        <IonTitle>Description</IonTitle>
+        <IonHeader>Description</IonHeader>
         <IonInput value={description} onIonChange={e => setDescription(e.detail.value || '')} />
-        <IonTitle>Severity</IonTitle>
+        <IonHeader>Severity</IonHeader>
         <IonInput type="number" value={severity} onIonChange={e => setSeverity(parseInt(e.detail.value!, 0))} />
-        <IonTitle>Date Reported</IonTitle>
+        <IonHeader>Date Reported</IonHeader>
         <IonDatetime
             displayFormat="MM DD YY"
             value={dateReported.toString()} onIonChange={e => setDateReported(new Date(e.detail.value!))}>
         </IonDatetime>
-        <IonTitle>Solved</IonTitle>
+        <IonHeader>Solved</IonHeader>
         <IonCheckbox checked={solved} onIonChange={e => setSolved(e.detail.checked)} />
         <IonLoading isOpen={saving || deleting} />
         {savingError && (
