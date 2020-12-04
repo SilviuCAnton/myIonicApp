@@ -267,7 +267,7 @@ export const BugProvider: React.FC<BugProviderProps> = ({ children }) => {
         const fetched = await getBugs(token, (await Storage.get({key : '_id'})).value, 0, offset + size, isSolved, searchTitle, bugsToSend);
         bugsToSend.forEach(bg => {
           let lst = fetched.filter(b => b.id === bg.id)
-          if (lst.length ===0) {
+          if (lst.length === 0) {
             fetched.push(bg)
           }
         })

@@ -65,10 +65,12 @@ export const updateBug: (token: string, _id: string, bug: BugProps) => Promise<U
   const result = axios.put(`${bugUrl}/${bug.id}`, bug, authConfig(token, _id))
 
   result.then(async function (result) {
-    await Storage.set({
-      key: result.data.id!,
-      value: JSON.stringify(result.data),
-    });
+    if(result.data.bug) {
+      await Storage.set({
+        key: result.data.bug.id!,
+        value: JSON.stringify(result.data.bug),
+      });
+    }
   });
 
   return withLogs(result, 'updateBug');

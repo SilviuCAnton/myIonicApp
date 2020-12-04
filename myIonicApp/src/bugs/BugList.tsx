@@ -156,7 +156,6 @@ const BugList: React.FC<RouteComponentProps> = ({ history }) => {
               {diffs.map(({ localVersion, serverVersion }) => <BugConflict localVersion={localVersion} serverVersion= {serverVersion} onSolve={solveConflict} ></BugConflict>)}
             </IonList></>
         )}
-        {console.log(bugs)}
         {bugs && (typeof diffs === 'undefined' || diffs.length === 0) && (
           <IonList>
             {bugs.map(({ id, title, description, severity, dateReported, solved, version}) =>
