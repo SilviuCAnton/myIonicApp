@@ -11,6 +11,8 @@
 # production
 /build
 
+maps/mapsApiKey
+
 # misc
 .DS_Store
 .env.local
