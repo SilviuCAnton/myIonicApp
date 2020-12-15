@@ -6,4 +6,7 @@ export interface BugProps {
     dateReported: Date;
     solved: boolean;
     version: number;
+    photo: string;
+    lat: number;
+    lng: number;
   }
