@@ -1,1 +1,0 @@
-export const mapsApiKey = 'AIzaSyB_0JkOs4dHKlc0kQEPvDMy89sW7utRIb4';
