@@ -12,7 +12,9 @@ import {
   IonPage,
   IonTitle,
   IonToolbar,
-  IonImg
+  IonImg,
+  IonModal,
+  createAnimation
 } from '@ionic/react';
 import { getLogger } from '../core';
 import {Map} from "../maps/Map";
@@ -33,6 +35,7 @@ const BugEdit: React.FC<BugEditProps> = ({ history, match }) => {
   const { lat: lat2, lng: lng2 } = location || {};
   const { bugs, saving, deleting, savingError, deletingError, saveBug, deleteBug } = useContext(BugContext);
   const [title, setTitle] = useState('');
+  const  [showModal, setShowModal] = useState(false);
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState(0);
   const [lat, setLat] = useState(0);
@@ -68,6 +71,29 @@ const BugEdit: React.FC<BugEditProps> = ({ history, match }) => {
 
   }, [match.params.id, bugs]);
 
+  const enterAnimation = (baseEl: any) => {
+    const backdropAnimation = createAnimation()
+      .addElement(baseEl.querySelector('ion-backdrop')!)
+      .fromTo('opacity', '0.01', 'var(--backdrop-opacity)');
+
+    const wrapperAnimation = createAnimation()
+      .addElement(baseEl.querySelector('.modal-wrapper')!)
+      .keyframes([
+        { offset: 0, opacity: '0', transform: 'scale(0)' },
+        { offset: 1, opacity: '0.99', transform: 'scale(1)' }
+      ]);
+
+    return createAnimation()
+      .addElement(baseEl)
+      .easing('ease-out')
+      .duration(500)
+      .addAnimation([backdropAnimation, wrapperAnimation]);
+  }
+
+  const leaveAnimation = (baseEl: any) => {
+    return enterAnimation(baseEl).direction('reverse');
+  }
+
   const handleSave = () => {
     const editedBug = bug ? { ...bug, title, description, severity, dateReported, solved, photo, lat, lng } : { title, description, severity, dateReported, solved, version, photo, lat, lng };
     saveBug && saveBug(editedBug).then(() => history.goBack());
@@ -95,6 +121,97 @@ const BugEdit: React.FC<BugEditProps> = ({ history, match }) => {
     }
   }
 
+  async function createChainedAnimation() {
+    let animation1 = createAnimation()
+    .addElement(document.getElementById("title")!)
+    .duration(1000)
+    .iterations(1)
+    .keyframes([
+      { offset: 0, transform: 'scale(1))', opacity: '1' },
+      { offset: 0.5, transform: 'scale(0.8)', opacity: '0.3' },
+      { offset: 1, transform: 'scale(1)', opacity: '1' }
+    ]);
+
+    let animation2 = createAnimation()
+    .addElement(document.getElementById("descrition")!)
+    .duration(1000)
+    .iterations(1)
+    .keyframes([
+      { offset: 0, transform: 'scale(1))', opacity: '1' },
+      { offset: 0.5, transform: 'scale(0.6)', opacity: '0.3' },
+      { offset: 1, transform: 'scale(1)', opacity: '1' }
+    ]);
+
+    let animation3 = createAnimation()
+    .addElement(document.getElementById("severity")!)
+    .duration(1000)
+    .iterations(1)
+    .keyframes([
+      { offset: 0, transform: 'scale(1))', opacity: '1' },
+      { offset: 0.5, transform: 'scale(0.4)', opacity: '0.3' },
+      { offset: 1, transform: 'scale(1)', opacity: '1' }
+    ]);
+
+    await animation1.play()
+    await animation2.play()
+    await animation3.play()
+  }
+
+  function createGroupAnimation() {
+    let animation1 = createAnimation()
+    .addElement(document.getElementById("title")!)
+    .duration(1000)
+    .iterations(1)
+    .keyframes([
+      { offset: 0, transform: 'scale(1))', opacity: '1' },
+      { offset: 0.5, transform: 'scale(0.8)', opacity: '0.3' },
+      { offset: 1, transform: 'scale(1)', opacity: '1' }
+    ]);
+
+    let animation2 = createAnimation()
+    .addElement(document.getElementById("descrition")!)
+    .duration(1000)
+    .iterations(1)
+    .keyframes([
+      { offset: 0, transform: 'scale(1))', opacity: '1' },
+      { offset: 0.5, transform: 'scale(0.6)', opacity: '0.3' },
+      { offset: 1, transform: 'scale(1)', opacity: '1' }
+    ]);
+
+    let animation3 = createAnimation()
+    .addElement(document.getElementById("severity")!)
+    .duration(1000)
+    .iterations(1)
+    .keyframes([
+      { offset: 0, transform: 'scale(1))', opacity: '1' },
+      { offset: 0.5, transform: 'scale(0.4)', opacity: '0.3' },
+      { offset: 1, transform: 'scale(1)', opacity: '1' }
+    ]);
+
+    const parent = createAnimation()
+    .duration(1000)
+    .iterations(Infinity)
+    .addAnimation([animation1, animation2, animation3]);
+    parent.play()
+  }
+
+  function createEditAnimation() {
+    let animation = createAnimation()
+    .addElement(document.getElementById("check")!)
+    .duration(3000)
+    .iterations(1)
+    .keyframes([
+      { offset: 0.2, transform: 'scale(1) rotate(0)' },
+      { offset: 0.4, transform: 'scale(1.2) rotate(45deg)' },
+      { offset: 0.6, transform: 'scale(1) rotate(45deg)' },
+      { offset: 0.8, transform: 'scale(1) rotate(-45deg)' },
+      { offset: 1, transform: 'scale(1) rotate(0)' }
+    ]);
+    animation.play()
+  }
+
+  
+
   const displayDeleteButton = bug ? <IonButtons slot="end"><IonButton onClick={handleDelete}>Delete</IonButton></IonButtons> : '';
 
   log('render');
@@ -113,26 +230,30 @@ const BugEdit: React.FC<BugEditProps> = ({ history, match }) => {
       </IonHeader>
       <IonContent>
         <IonHeader>Title</IonHeader>
-        <IonInput value={title} onIonChange={e => setTitle(e.detail.value || '')} />
+        <IonInput value={title} id='title' onIonChange={e => {setTitle(e.detail.value || ''); createGroupAnimation()}} />
         <IonHeader>Description</IonHeader>
-        <IonInput value={description} onIonChange={e => setDescription(e.detail.value || '')} />
+        <IonInput value={description} id='descrition' onIonChange={e => {setDescription(e.detail.value || ''); createGroupAnimation()}} />
         <IonHeader>Severity</IonHeader>
-        <IonInput type="number" value={severity} onIonChange={e => setSeverity(parseInt(e.detail.value!, 0))} />
+        <IonInput type="number" value={severity} id='severity' onIonChange={e => {setSeverity(parseInt(e.detail.value!, 0)); createGroupAnimation()}} />
         <IonHeader>Date Reported</IonHeader>
         <IonDatetime
             displayFormat="MM DD YY"
-            value={dateReported.toString()} onIonChange={e => setDateReported(new Date(e.detail.value!))}>
+            value={dateReported.toString()} onIonChange={async e => {setDateReported(new Date(e.detail.value!)); await createChainedAnimation()}}>
         </IonDatetime>
         <IonHeader>Solved</IonHeader>
-        <IonCheckbox checked={solved} onIonChange={e => setSolved(e.detail.checked)} />
+        <IonCheckbox checked={solved} id='check' onIonChange={e => {setSolved(e.detail.checked); createEditAnimation()}} />
         {photo && (<img onClick={handlePhotoChange} src={photo} width={'100px'} height={'100px'}/>)}
         {!photo && (<img onClick={handlePhotoChange} src={'https://verimedhealthgroup.com/wp-content/uploads/2019/03/profile-img.jpg'} width={'100px'} height={'100px'}/>)}
         {console.log(lat2)}
-        <Map
-            lat={lat2}
-            lng={lng2}
-            onMapClick={handleMapOnClick()}
-        />
+        <IonModal isOpen={showModal} enterAnimation={enterAnimation} leaveAnimation={leaveAnimation}>
+          <Map
+              lat={lat2}
+              lng={lng2}
+              onMapClick={handleMapOnClick()}
+          />
+          <IonButton onClick={() => setShowModal(false)}>Close Map</IonButton>
+        </IonModal>
+        <IonButton onClick={() => setShowModal(true)}>Select Location</IonButton>
         
         <IonLoading isOpen={saving || deleting} />
         {savingError && (
